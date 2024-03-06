@@ -44,8 +44,12 @@ def process_audio_data():
                     break
                 yield data
 
-        # Upload audio directly to S3 bucket in chunks
-        s3.upload_fileobj(read_file_chunks(audio_file), bucket_name, audio_file.filename)
+        try:
+            # Upload audio directly to S3 bucket in chunks
+            s3.upload_fileobj(read_file_chunks(audio_file), bucket_name, audio_file.filename)
+        except Exception as e:
+            print(f"Error uploading audio to S3: {e}")
+            return jsonify({"error": "An error occurred while uploading the audio to S3"}), 500
 
         audio_data_uri = f"https://{bucket_name}.s3.amazonaws.com/{audio_file.filename}"
 
