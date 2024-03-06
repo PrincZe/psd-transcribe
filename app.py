@@ -3,7 +3,6 @@ import replicate
 import os
 import boto3
 from dotenv import load_dotenv
-import io
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,14 +35,17 @@ def process_audio_data():
         audio_file = request.files["audio"]
 
         print("Processing audio...")
-        
-        # Read audio data from file-like object
-        audio_data = io.BytesIO()
-        audio_file.save(audio_data)
-        audio_data.seek(0)
 
-        # Upload audio directly to S3 bucket
-        s3.upload_fileobj(audio_data, bucket_name, audio_file.filename)
+        def read_file_chunks(file, chunk_size=8192):
+            """Generator function to read a file in chunks"""
+            while True:
+                data = file.read(chunk_size)
+                if not data:
+                    break
+                yield data
+
+        # Upload audio directly to S3 bucket in chunks
+        s3.upload_fileobj(read_file_chunks(audio_file), bucket_name, audio_file.filename)
 
         audio_data_uri = f"https://{bucket_name}.s3.amazonaws.com/{audio_file.filename}"
 
